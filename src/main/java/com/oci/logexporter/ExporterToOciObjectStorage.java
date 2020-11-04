@@ -11,9 +11,6 @@ import com.oracle.bmc.loggingsearch.model.SearchResult;
 import com.oracle.bmc.loggingsearch.requests.SearchLogsRequest;
 import com.oracle.bmc.loggingsearch.responses.SearchLogsResponse;
 import com.oracle.bmc.model.BmcException;
-import com.oracle.bmc.retrier.RetryConfiguration;
-import com.oracle.bmc.waiter.DelayStrategy;
-import com.oracle.bmc.waiter.WaiterConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +45,7 @@ public class ExporterToOciObjectStorage {
         Date startDate = ConfigHolder.startDate;
         Date endDate = new Date(startDate.getTime() + ConfigHolder.timeWindowIncrement);
         Set<String> prevChunkSetOfLogIds = new HashSet<>();
-        int apiCallAttempt = 1 ;
+        int apiCallAttempt = 1;
         do {
             SearchLogsDetails searchLogsDetails = SearchLogsDetails.builder().
                     searchQuery(ConfigHolder.searchQuery).
@@ -103,7 +100,7 @@ public class ExporterToOciObjectStorage {
                     startDate = new Date((long) mapForLastLogEntry.get("datetime") + 1);
                 } else {
                     System.out.println("no chunk for this time window, Start Date " + startDate + " , End Date : " + endDate);
-                    startDate = new Date(endDate.getTime()+1);
+                    startDate = new Date(endDate.getTime() + 1);
                 }
                 sizeOfResultSet = 0;
                 searchLogsResponse = null;
@@ -111,8 +108,8 @@ public class ExporterToOciObjectStorage {
             } catch (BmcException e) {
                 System.out.println("Error: Could not get logs ...Due to exception " + e);
                 Thread.sleep(100);
-                if (apiCallAttempt > 12){
-                    System.out.println("Exiting since consistent errors for " + apiCallAttempt +" times");
+                if (apiCallAttempt > 12) {
+                    System.out.println("Exiting since consistent errors for " + apiCallAttempt + " times");
                     System.exit(1);
                 }
                 apiCallAttempt++;
@@ -148,7 +145,7 @@ public class ExporterToOciObjectStorage {
 
         Files.write(jsonLogs.toPath(), jsonPrettyLogs.getBytes(), StandardOpenOption.CREATE);
 
-        ObjectStorageHandler.putLogObject(jsonLogs.getName(),jsonLogs);
+        ObjectStorageHandler.putLogObject(jsonLogs.getName(), jsonLogs);
 
     }
 
@@ -158,6 +155,5 @@ public class ExporterToOciObjectStorage {
                 build(ConfigHolder.ociAuthProvider);
         return logSearchClient;
     }
-
 
 }

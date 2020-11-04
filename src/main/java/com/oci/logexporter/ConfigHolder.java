@@ -25,9 +25,26 @@ public class ConfigHolder {
     static int logFetchApiLimit = 999;
     static String osNamespace = "intrandallbarnes";
     static String parentBucketName = "LogExport_";
+
     static Region regionOci = null;
     static private String ociConfigFilePath = "/Users/mraleras/.oci/config";
     static private String loggingOciProfileName = "DEFAULT";
+
+    static void initialize1(String[] args) {
+        try {
+            ociAuthProvider = getOciAuthProvider();
+
+            File file = new File(System.getProperty("user.home"));
+            newLogDir = new File(file, "logDir");
+            if (newLogDir.exists()) {
+                FileUtils.deleteDirectory(newLogDir);
+                newLogDir.mkdir();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
 
     static void initialize(String[] args) {
         try {

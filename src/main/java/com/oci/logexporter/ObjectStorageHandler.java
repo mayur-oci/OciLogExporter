@@ -50,5 +50,28 @@ public class ObjectStorageHandler {
         return false;
     }
 
+    static boolean putLogObject(String osNamespace, String bucketName, String objectName, File logFileObj) {
+
+        PutObjectRequest request =
+                PutObjectRequest.builder()
+                        .bucketName(bucketName)
+                        .namespaceName(osNamespace)
+                        .objectName(objectName)
+                        .contentType(contentType)
+                        .contentLanguage(contentLanguage)
+                        .contentEncoding(contentEncoding)
+                        .opcMeta(metadata)
+                        .build();
+
+        UploadManager.UploadRequest uploadDetails =
+                UploadManager.UploadRequest.builder(logFileObj).allowOverwrite(true).build(request);
+
+        // upload request and print result
+        // if multi-part is used, and any part fails, the entire upload fails and will throw BmcException
+        UploadManager.UploadResponse response = uploadManager.upload(uploadDetails);
+
+        return false;
+    }
+
 
 }
