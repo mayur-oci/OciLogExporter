@@ -7,11 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class LogExporterApplication {
 
     public static void main(String[] args) throws InterruptedException {
-
         SpringApplication.run(LogExporterApplication.class, args);
-        //ConfigHolder.initialize(args);
-        // ExporterToOciObjectStorage.searchLogs();
-
     }
 
 }

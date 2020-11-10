@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.Future;
 
 public class LogExportReq {
 
@@ -30,7 +31,7 @@ public class LogExportReq {
     // We cover entire time range from startDateInMillisSinceEpoch to endDateInMillisSinceEpoch
     // by moving time window for each successive searchLogs api call
     // keep less than 5*60 .. 5 minutes
-    public long timeWindowIncrementInSeconds = 120; // 2 minutes
+    public Long timeWindowIncrementInSeconds = 120l; // 2 minutes
     // Upload Size In Number Of LogRecords in each. This is approximate
     // uploadLogFileSize <= Actual number of records <= (uploadLogFileSize + logFetchApiLimit)
     // keep it less than 8000
@@ -63,7 +64,12 @@ public class LogExportReq {
     @JsonIgnore
     public String objectStoragePrefixForUploadedFilesForThisRequest;
     @JsonIgnore
-    public volatile boolean isJobAborted = false;
+    public volatile boolean doesJobNeedsToBeAborted = false;
+    @JsonIgnore
+    public volatile Future<?> future = null;
+    @JsonIgnore
+    public Date startOfJobTS;
+
     // Log Search criteria...determines logs to be exported
     // preferably run your code in the same region from where your reading logs
     // and also have destination object storage bucket in the same region from latency point of view.
@@ -82,7 +88,7 @@ public class LogExportReq {
     // preferably run your code in the same region from where your reading logs
     // and also this code 'assumes' destination object storage bucket in the same region. This helps from latency point of view.
     String ociObjectStorageNamespace = null; // usually same as your OCI tenancy name
-    String parentBucketName = null;
+    String destinationBucketName = null;
     // needed only if you are running code locally or where you have oci cli setup...
     // else use dynamic group if running on OCI cloud as explained above
     String ociConfigFilePath = null;
@@ -144,8 +150,8 @@ public class LogExportReq {
         this.ociObjectStorageNamespace = ociObjectStorageNamespace;
     }
 
-    public String getParentBucketName() {
-        return parentBucketName;
+    public String getDestinationBucketName() {
+        return destinationBucketName;
     }
 
     public String getOciConfigFilePath() {
@@ -198,35 +204,37 @@ public class LogExportReq {
                 startDateInMillisSinceEpoch.equals(that.startDateInMillisSinceEpoch) &&
                 endDateInMillisSinceEpoch.equals(that.endDateInMillisSinceEpoch) &&
                 ociObjectStorageNamespace.equals(that.ociObjectStorageNamespace) &&
-                parentBucketName.equals(that.parentBucketName);
+                destinationBucketName.equals(that.destinationBucketName) &&
+                timeWindowIncrementInSeconds == that.timeWindowIncrementInSeconds;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(region, ociLogSearchQuery, startDateInMillisSinceEpoch, endDateInMillisSinceEpoch,
-                ociObjectStorageNamespace, parentBucketName);
+        return Math.abs(Objects.hash(region, ociLogSearchQuery, startDateInMillisSinceEpoch, endDateInMillisSinceEpoch,
+                ociObjectStorageNamespace, destinationBucketName, timeWindowIncrementInSeconds));
     }
 
     @Override
     public String toString() {
         return "Your request info :  " +
                 "\n                  " +
-                "\n                  jobId=" + jobId +
+                "\n                  jobId=" + jobId + " ,Generated after hashing " + "(region, ociLogSearchQuery, startDateInMillisSinceEpoch, endDateInMillisSinceEpoch,\n" +
+                "                    ociObjectStorageNamespace, destinationBucketName, timeWindowIncrementInSeconds) hence unique to each search query" +
                 "\n                  region='" + region + '\'' +
                 "\n                  ociLogSearchQuery='" + ociLogSearchQuery + '\'' +
                 "\n                  startDateInMillisSinceEpoch=" + startDateInMillisSinceEpoch +
                 "\n                  endDateInMillisSinceEpoch=" + endDateInMillisSinceEpoch +
+                "\n                  startDate in date format=" + startDate +
+                "\n                  endDate in date format=" + endDate +
                 "\n                  timeWindowIncrementInSeconds=" + timeWindowIncrementInSeconds +
                 "\n                  uploadLogFileSize=" + numberOfLogRecordsForEachFile +
                 "\n                  logFetchApiLimit=" + logFetchApiLimit +
                 "\n                  ociObjectStorageNamespace='" + ociObjectStorageNamespace + '\'' +
-                "\n                  parentBucketName='" + parentBucketName + '\'' +
+                "\n                  destinationBucketName='" + destinationBucketName + '\'' +
                 "\n                  ociConfigFilePath='" + ociConfigFilePath + '\'' +
                 "\n                  ociProfileName='" + ociProfileName + '\'' +
                 "\n                  ociRegion=" + ociRegion +
                 "\n                  endpointForLogSearchOci='" + endpointForLogSearchOci + '\'' +
-                "\n                  startDate=" + startDate +
-                "\n                  endDate=" + endDate +
                 "\n                  local requestOutputFile=" + requestOutputFile +
                 "\n                  local requestLogDirectory=" + requestLogDirectory +
                 "\n                  Object Storage prefix for uploaded files for this request=" + objectStoragePrefixForUploadedFilesForThisRequest.replace("_", "/") +
@@ -239,9 +247,21 @@ public class LogExportReq {
                 return ("ERROR: Input parameter ociLogSearchQuery cant be null and must end with -  \"| sort by datetime asc\"");
             }
 
-            this.timeOfStartOfRequestInSecondsFromEpoch = String.valueOf(System.currentTimeMillis() / 1000);
+            if(StringUtils.isEmpty(destinationBucketName)){
+                return "Bucket name cant be empty";
+            }
+
+            if(StringUtils.isEmpty(ociObjectStorageNamespace)){
+                return "Object Storage namespace cant be empty";
+            }
+
+            if(timeWindowIncrementInSeconds > 180){
+                return "Keep timeWindowIncrementInSeconds no more than 180 seconds";
+            }
+
             this.jobId = this.hashCode();
-            this.objectStoragePrefixForUploadedFilesForThisRequest = this.jobId + "_" + this.timeOfStartOfRequestInSecondsFromEpoch + "_";
+            this.startOfJobTS = new Date();
+            this.objectStoragePrefixForUploadedFilesForThisRequest = "JobId(unique to search query)" + this.jobId + "_" + "Time Of JobRun for this log collection" + this.startOfJobTS.toString() + "_";
             File file = new File(System.getProperty("user.home"));
             this.requestLogDirectory = new File(file, "logDir_" + this.objectStoragePrefixForUploadedFilesForThisRequest);
             if (requestLogDirectory.exists()) {
@@ -282,7 +302,7 @@ public class LogExportReq {
         this.objUploadManager = new UploadManager(ociOsClient, uploadConfiguration);
     }
 
-    public void log(String logLine) {
+    synchronized public void log(String logLine) {
         try {
             System.out.println(logLine);
             byte[] logLineBytes = (logLine + "\n").getBytes();

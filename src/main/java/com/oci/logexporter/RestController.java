@@ -3,18 +3,17 @@ package com.oci.logexporter;
 import com.oci.logexporter.pojo.LogExportReq;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@RestController
+@org.springframework.web.bind.annotation.RestController
 @RequestMapping(path = "/export")
-public class LogExportController {
+public class RestController {
 
-    static Map<Integer, LogExportReq> map = new HashMap<Integer, LogExportReq>();
+    static ConcurrentMap<Integer, LogExportReq> map = new ConcurrentHashMap<Integer, LogExportReq>();
+    static ExecutorService executorService = Executors.newFixedThreadPool(5);
 
     private static String txtToHtml(String s) {
         StringBuilder builder = new StringBuilder();
@@ -66,32 +65,47 @@ public class LogExportController {
     @PostMapping(path = "/", consumes = "application/json", produces = "application/text")
     public String exportFromLogsToOs(@RequestBody LogExportReq logExportReq)
             throws Exception {
-        String success = logExportReq.initialization();
-        if(!success.startsWith("Started Job ")){
-            return success;
+        if (map.size() > 5) {
+            return " Do not submit more than 5 log export jobs...either wait for any existing job to finish " +
+                    "Or kill any job with HTTP GET request on <hostname>:8080/export/killjob?jobId=<jobId>";
         }
-        LogExporter logExporter = new LogExporter(logExportReq);
-        new Thread(logExporter, String.valueOf(logExportReq.getJobId())).start();
-        map.put(logExportReq.jobId, logExportReq);
-        return logExportReq.toString();
+        if (!map.containsKey(logExportReq.hashCode())) {
+            String success = logExportReq.initialization();
+            if (!success.startsWith("Started Job ")) {
+                return success;
+            }
+            LogExporter logExporter = new LogExporter(logExportReq);
+            Future<?> future = executorService.submit(logExporter);
+            logExportReq.future = future;
+            map.put(logExportReq.jobId, logExportReq);
+            return logExportReq.toString() + "\n\n Please take note of jobId:" +
+                    logExportReq.jobId + " to track job and see its log with HTTP GET request on <hostname>:8080/export/jobstatus?jobId=" + logExportReq.jobId +
+                    " Log file will also be uploaded to same bucket at the end of the job";
+        } else {
+            return "\n\n Same job already exists. Please kill it first with HTTP GET request on <hostname>:8080/export/killjob?jobId=" + logExportReq.hashCode();
+        }
     }
 
-    @GetMapping(path = "/", produces = "application/json")
-    public LogExportReq getSampleJson() {
-        return new LogExportReq();
-    }
 
     @GetMapping(path = "/jobstatus")
     public String getJobStatus(@RequestParam(name = "jobId") String jobId) {
         try {
             LogExportReq logReq = (LogExportReq) map.get(Integer.parseInt(jobId));
-            return "<html><head><title>" +
-                    jobId +
-                    "</title></head><body>" +
-                    txtToHtml(Files.readString(logReq.requestOutputFile.toPath())) +
-                    "</body></html>";
-        } catch (IOException e) {
-            return " Could not fetch status Exception " + e;
+            if (logReq != null) {
+                return "<html><head><title>" +
+                        logReq.objectStoragePrefixForUploadedFilesForThisRequest +
+                        "</title></head><body>" +
+                        txtToHtml(Files.readString(logReq.requestOutputFile.toPath())) +
+                        "</body></html>";
+            } else {
+                return "<html><head><title>" +
+                        jobId +
+                        "</title></head><body>" +
+                        txtToHtml("No job found with jobId: " + jobId) +
+                        "</body></html>";
+            }
+        } catch (Exception e) {
+            return " Could not fetch status jobId is integer.Exception " + e;
         }
     }
 
@@ -101,11 +115,19 @@ public class LogExportController {
         LogExportReq logReq = (LogExportReq) map.get(Integer.parseInt(jobId));
         if (logReq != null) {
             logReq.log("Attempting to abort the job " + jobId);
-            logReq.isJobAborted = true;
+            logReq.doesJobNeedsToBeAborted = true;
+            while (logReq.future.isDone()) {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    continue;
+                }
+            }
+            map.remove(logReq.jobId);
             return "<html><head><title>" +
                     jobId +
                     "</title></head><body>" +
-                    txtToHtml("Job with jobId: " + jobId + " aborted") +
+                    txtToHtml("Job with jobId: " + jobId + " aborted!!!\n") +
                     "</body></html>";
         } else {
             return "<html><head><title>" +

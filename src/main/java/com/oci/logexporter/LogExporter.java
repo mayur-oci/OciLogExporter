@@ -36,22 +36,25 @@ class LogExporter implements Runnable {
     List<SearchResult> consolidatedSearchResultList = new ArrayList<>();
     int logFileCount;
     LogExportReq logReq;
-    private String exitMsg = null;
+    private Date startDateLog;
+    private String exitMsgOnError = null;
 
     public LogExporter(LogExportReq logExportReq) {
         this.logReq = logExportReq;
         this.logFileCount = 0;
-        exitMsg = "\n----Aborting this job with jobId " + logReq.jobId +
-                "\n----If you want delete the log files for this job, all log files uploaded for this job have prefix " + logReq.objectStoragePrefixForUploadedFilesForThisRequest.replace("_", "/")
-                + "\n----The bucket " + logReq.getParentBucketName() + " contains these log files";
+        this.startDateLog = this.logReq.startDate;
+        exitMsgOnError = "\n      ----Aborting this job with jobId " + logReq.jobId +
+                "\n      ----If you want delete the log files for this job, all log files uploaded for this job have prefix " + logReq.objectStoragePrefixForUploadedFilesForThisRequest.replace("_", "/")
+                + "\n      ----The bucket " + logReq.getDestinationBucketName() + " contains these log files";
     }
 
-    private static String objToJson(List<SearchResult> searchResultList) {
+    private String objToJson(List<SearchResult> searchResultList) {
         try {
             String objJackson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(searchResultList);
             return objJackson;
         } catch (JsonProcessingException e) {
-            System.out.println("ERROR: failed conversion :object to Json" + e);
+            logReq.log("ERROR: failed conversion :object to Json" + e);
+            logReq.doesJobNeedsToBeAborted = true;
         }
         return null;
     }
@@ -60,29 +63,35 @@ class LogExporter implements Runnable {
     public void run() {
         try {
             searchLogs();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             logReq.log("ERROR : Thread crashed for " + logReq + " with exception" + e);
+            logReq.doesJobNeedsToBeAborted = true;
         }
-        if (logReq.isJobAborted)
+        if (logReq.doesJobNeedsToBeAborted) {
             logReq.log("Job was aborted either due to error or by user");
-
+        } else {
+            logReq.log("Job is completed successfully.");
+        }
         logReq.log("Log file " + logReq.requestOutputFile.getName() + " for this logs export request " +
-                "is uploaded to the same bucket. Please look if there are any ERROR log statement, " +
-                "please try to resolve issue and run the the request again.");
+                "is uploaded to the same bucket. Please look if there are any ERROR log statements, " +
+                "if there are errors please try to resolve issue and run the the request again." +
+                "Time taken by job in minutes " + (System.currentTimeMillis() - logReq.startOfJobTS.getTime()) / (1000 * 60));
         putLogObject(logReq.requestOutputFile);
+
+        RestController.map.remove(logReq.jobId);
     }
 
     public void searchLogs() throws InterruptedException {
         int sizeOfResultSet = 0;
-        Date startDate = logReq.startDate;
-        Date endDate = new Date(startDate.getTime() + logReq.timeWindowIncrementInSeconds * 1000);
+        Date startDateApi = logReq.startDate;
+        Date endDateApi = new Date(startDateApi.getTime() + logReq.timeWindowIncrementInSeconds * 1000);
         Set<String> prevChunkSetOfLogIds = new HashSet<>();
         int apiCallAttempt = 1;
         do {
             SearchLogsDetails searchLogsDetails = SearchLogsDetails.builder().
                     searchQuery(logReq.getOciLogSearchQuery()).
-                    timeStart(startDate).
-                    timeEnd(endDate).
+                    timeStart(startDateApi).
+                    timeEnd(endDateApi).
                     isReturnFieldInfo(false).
                     build();
 
@@ -90,89 +99,119 @@ class LogExporter implements Runnable {
                     limit(logReq.logFetchApiLimit).build();
             SearchLogsResponse searchLogsResponse = null;
             List<SearchResult> resultSet = null;
-            List<SearchResult> prevCallRemaining = new ArrayList<>();
 
             try {
                 searchLogsResponse = logReq.ociLogClient.searchLogs(searchLogsRequest);
+
                 sizeOfResultSet = searchLogsResponse.getSearchResponse().getSummary().getResultCount();
                 if (sizeOfResultSet > 0) {
                     resultSet = searchLogsResponse.getSearchResponse().getResults();
                     apiCallAttempt = 1;
-                    Set<String> thisChunkSetOfLogIds = new HashSet<>();
 
-                    for (SearchResult searchLogEntry : resultSet) {
-                        Map mapForLogEntry = (Map) searchLogEntry.getData();
+                    List<SearchResult> dedupedResultSet = new ArrayList<>();
+                    Set<String> thisChunkSetOfLogIds = getLogRecordIdsAndMakeSureNoDuplicates(prevChunkSetOfLogIds, resultSet, dedupedResultSet);
+                    resultSet = dedupedResultSet;
+                    sizeOfResultSet = resultSet.size();
 
-                        String logEntryId = (String) mapForLogEntry.get("id");
-                        if (prevChunkSetOfLogIds.contains(logEntryId)) {
-                            logReq.log("ERROR: Duplicate Log Entry ... highly unexpected " + logEntryId + exitMsg);
-                            logReq.isJobAborted = true;
-                        }
-                        thisChunkSetOfLogIds.add(logEntryId);
-                    }
                     prevChunkSetOfLogIds = thisChunkSetOfLogIds;
-                    assert thisChunkSetOfLogIds.size() == sizeOfResultSet;
+                    if (thisChunkSetOfLogIds.size() != sizeOfResultSet) {
+                        logReq.log("ERROR: Number of Ids and size of result set from api do not match");
+                        logReq.log("opc request id "+ searchLogsResponse.getOpcRequestId());
+                        logReq.log("StartTimeStamp is " + startDateApi.getTime() + " EndTimeStamp is " + endDateApi);
+                        logReq.doesJobNeedsToBeAborted = true;
+                        break;
+                    }
+
+                    if (logReq.doesJobNeedsToBeAborted) {
+                        break;
+                    }
 
                     consolidatedSearchResultList.addAll(resultSet);
 
                     if (sizeOfResultSet == 999) {
                         logReq.log("ERROR: This log fetch may lose some logs, Start Date : "
-                                + startDate + " , End Date : " + endDate +
-                                "\n----Make your search query more specific(more filtered say by compartment) and reduce input parameter timeWindowIncrementInSeconds. "
-                                + "\n----It is recommended to abort this request and try again with these changes" + exitMsg);
-                        logReq.isJobAborted = true;
-                        break;
+                                + startDateApi + " , End Date : " + endDateApi +
+                                "\n      ----Make your search query more specific(more filtered say by compartment) and reduce input parameter timeWindowIncrementInSeconds. "
+                                + "\n      ----It is recommended to abort this request and try again with these changes" + exitMsgOnError);
+                        // logReq.doesJobNeedsToBeAborted = true; break;
                     }
 
                     if (consolidatedSearchResultList.size() > logReq.getNumberOfLogRecordsForEachFile()) {
-                        logReq.log("Writing new log file for Start Date " + startDate + " , End Date : " + endDate);
-                        createObjectInOciOs();
+                        createObjectInOciOs(endDateApi);
                         consolidatedSearchResultList = new ArrayList<>();
                     }
                     Map mapForLastLogEntry = (Map) resultSet.get(sizeOfResultSet - 1).getData();
-                    startDate = new Date((long) mapForLastLogEntry.get("datetime") + 1);
+                    startDateApi = new Date((long) mapForLastLogEntry.get("datetime") + 1);
                 } else {
-                    logReq.log("No logs for the time window: Start Date " + startDate + " , End Date : " + endDate);
-                    startDate = new Date(endDate.getTime() + 1);
+                    // logReq.log("No logs for the time window: Start Date " + startDate + " , End Date : " + endDate);
+                    startDateApi = new Date(endDateApi.getTime() + 1);
                 }
-                endDate = new Date(startDate.getTime() + (logReq.timeWindowIncrementInSeconds * 1000));
+                endDateApi = new Date(startDateApi.getTime() + (logReq.timeWindowIncrementInSeconds * 1000));
             } catch (BmcException e) {
                 logReq.log("WARN: Could not get logs ...Due to exception ... trying again in 100 millis " + e);
-                Thread.sleep(100);
+                Thread.sleep(150);
                 if (apiCallAttempt > 12) {
-                    logReq.log("ERROR: Exiting since consistent errors for " + apiCallAttempt + " times" + exitMsg);
-                    logReq.isJobAborted = true;
+                    logReq.log("ERROR: Exiting since consistent errors for " + apiCallAttempt + " times" + exitMsgOnError);
+                    logReq.doesJobNeedsToBeAborted = true;
                     break;
                 }
                 apiCallAttempt++;
             } catch (Exception e) {
-                logReq.log("ERROR: Exiting due to exception " + e + exitMsg);
-                logReq.isJobAborted = true;
+                logReq.log("ERROR: Exiting due to exception " + e + exitMsgOnError);
+                logReq.doesJobNeedsToBeAborted = true;
                 return;
             }
 
-        } while (endDate.getTime() <= (logReq.endDate.getTime() + (logReq.timeWindowIncrementInSeconds * 1000)) && !logReq.isJobAborted);
+        } while (endDateApi.getTime() <= (logReq.endDate.getTime() + (logReq.timeWindowIncrementInSeconds * 1000)) && !logReq.doesJobNeedsToBeAborted);
 
         try {
-            if (consolidatedSearchResultList.size() > 0 && !logReq.isJobAborted) {
+            if (consolidatedSearchResultList.size() > 0 && !logReq.doesJobNeedsToBeAborted) {
                 logReq.log("Processing last chunk for this request");
-                createObjectInOciOs();
+                createObjectInOciOs(endDateApi);
                 logReq.log("Successfully completed job " + logReq.toString());
                 consolidatedSearchResultList = new ArrayList<>();
             }
         } catch (Exception e) {
-            logReq.log("Error: for last chunk ...Due to exception " + e);
+            logReq.log("ERROR: for last chunk ...Due to exception " + e);
+            logReq.doesJobNeedsToBeAborted = true;
         }
     }
 
-    private void createObjectInOciOs() throws IOException {
+    private Set<String> getLogRecordIdsAndMakeSureNoDuplicates(Set<String> prevChunkSetOfLogIds, List<SearchResult> resultSet, List<SearchResult> dedupedResulSet) {
+        Set<String> thisChunkSetOfLogIds = new HashSet<>();
+        for (SearchResult searchLogEntry : resultSet) {
+            Map mapForLogEntry = (Map) searchLogEntry.getData();
+            String logEntryId = (String) mapForLogEntry.get("id");
+            if (prevChunkSetOfLogIds.contains(logEntryId)) {
+                logReq.log("ERROR: Duplicate Log Entry ... highly unexpected " + logEntryId + exitMsgOnError);
+                logReq.doesJobNeedsToBeAborted = true;
+                break;
+            }
+            if(thisChunkSetOfLogIds.contains(logEntryId)){
+                logReq.log("Duplicate log record entry for id found in the single call of search API results : "+logEntryId);
+//                logReq.log(objToJson(resultSet));
+//                logReq.doesJobNeedsToBeAborted = true;
+//                break;
+
+            }else{
+                dedupedResulSet.add(searchLogEntry);
+            }
+            thisChunkSetOfLogIds.add(logEntryId);
+        }
+        return thisChunkSetOfLogIds;
+    }
+
+    private void createObjectInOciOs(Date endDateApi) throws IOException {
         String jsonPrettyLogs = objToJson(consolidatedSearchResultList);
-        String fileName = logReq.objectStoragePrefixForUploadedFilesForThisRequest + "Log" + (this.logFileCount++) + ".log";
+        String fileName = logReq.objectStoragePrefixForUploadedFilesForThisRequest + " Log records with timestamps from " + startDateLog.toString() + " to " + endDateApi.toString() + ".log";
+
         logReq.log("Number of records to be uploaded "
                 + consolidatedSearchResultList.size() + " with file " + fileName);
+
         File jsonLogs = new File(logReq.requestLogDirectory, fileName);
         Files.write(jsonLogs.toPath(), jsonPrettyLogs.getBytes(), StandardOpenOption.CREATE);
         putLogObject(jsonLogs);
+        this.startDateLog = new Date(endDateApi.getTime());
     }
 
     private boolean putLogObject(File logFileObj) {
@@ -181,7 +220,7 @@ class LogExporter implements Runnable {
             do {
                 PutObjectRequest request =
                         PutObjectRequest.builder()
-                                .bucketName(logReq.getParentBucketName())
+                                .bucketName(logReq.getDestinationBucketName())
                                 .namespaceName(logReq.getOciObjectStorageNamespace())
                                 .objectName(logFileObj.getName().replace("_", "/")) // https://docs.cloud.oracle.com/en-us/iaas/Content/Object/Tasks/managingobjects.htm#nameprefix
                                 .contentType(null)
@@ -204,19 +243,20 @@ class LogExporter implements Runnable {
                     logReq.log("-md5 from local calculations " + md5);
                     DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.
                             builder().namespaceName(logReq.getOciObjectStorageNamespace())
-                            .bucketName(logReq.getParentBucketName()).
+                            .bucketName(logReq.getDestinationBucketName()).
                                     objectName(logFileObj.getName()).build();
 
                     logReq.ociOsClient.deleteObject(deleteObjectRequest);
                     continue;
                 } else {
-                    logReq.log("Log file " + logFileObj.getName() + " uploaded successfully to oci object storage bucket " + logReq.getParentBucketName());
+                    logReq.log("Log file " + logFileObj.getName() + " uploaded successfully to oci object storage bucket " + logReq.getDestinationBucketName());
                     logFileObj.delete();
                     break;
                 }
             } while (true);
         } catch (Exception e) {
             logReq.log("ERROR: Failed to upload log file " + logFileObj.getName() + " to oci object storage. Exception : " + e);
+            logReq.doesJobNeedsToBeAborted = true;
             return false;
         }
 
