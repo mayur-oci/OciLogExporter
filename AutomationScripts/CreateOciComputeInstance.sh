@@ -10,6 +10,8 @@
 
     # Use your ssh public key file location here. Required for SSH connection to the compute instance.
     export SSH_PUBLIC_KEY_LOCATION="/Users/mraleras/sshkeypair1.key.pub"
+    export SSH_PRIVATE_KEY_LOCATION="/Users/mraleras/sshkeypair1.key.pvt"
+
 
     # Image decides the operating system for the compute instance.
     # We need Oracle Linux since the scripts are tested on this OS.
@@ -83,6 +85,11 @@
     DG_POLICY_ID=$(oci iam policy create -c $OCI_TENANCY_OCID --name "DG_POLICY_$COMPARTMENT_NAME" --description "A policy for instance" --statements file://`pwd`/statements.json --region ${OCI_HOME_REGION} --raw-output --query "data.id" --wait-for-state ACTIVE)
     echo Created policy ${DG_POLICY_ID}.  Use the command: \'oci iam policy get --policy-id "${DG_POLICY_ID}"\' if you want to view the policy.
     rm -rf statements.json
+
+# ssh -i sshkeypair1.key.pvt -t -o ServerAliveInterval=60 -o "StrictHostKeyChecking no"  \
+# opc@158.101.28.56 "echo \$HOME"
+
+
 
 
 
