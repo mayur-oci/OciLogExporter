@@ -1,5 +1,7 @@
+#!/bin/bash
+
 # This script needs root privileges
-    sudo bash
+#   sudo su
 
 # Disable firewall of OCI linux node for HTTP and other communication to node.
 # This is needed in addition to security lists changes for the subnet for this node
