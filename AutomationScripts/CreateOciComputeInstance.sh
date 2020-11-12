@@ -86,8 +86,13 @@
     echo Created policy ${DG_POLICY_ID}.  Use the command: \'oci iam policy get --policy-id "${DG_POLICY_ID}"\' if you want to view the policy.
     rm -rf statements.json
 
-# ssh -i sshkeypair1.key.pvt -t -o ServerAliveInterval=60 -o "StrictHostKeyChecking no"  \
-# opc@158.101.28.56 "echo \$HOME"
+# SSH into the node, set it up JDK 11, configure firewall and run the exporter
+    export GIT_SETUP_EXPORTER="https://raw.githubusercontent.com/mayur-oci/OciLogExporter/master/AutomationScripts/SetupOciInstanceForLogExporter.sh"
+    ssh -i $SSH_PRIVATE_KEY_LOCATION  -o ServerAliveInterval=60 -o "StrictHostKeyChecking no" opc@$COMPUTE_IP \
+           "curl -O $GIT_SETUP_EXPORTER; chmod 777 SetupOciInstanceForLogExporter.sh"
+    ssh -i $SSH_PRIVATE_KEY_LOCATION -o ServerAliveInterval=60 -o "StrictHostKeyChecking no" opc@$COMPUTE_IP
+    echo;echo;echo "Run the Script for setup after with root privileges aka 'sudo ./SetupOciInstanceForLogExporter.sh' on the instance"
+
 
 
 
