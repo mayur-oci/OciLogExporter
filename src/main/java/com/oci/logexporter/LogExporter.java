@@ -116,7 +116,7 @@ class LogExporter implements Runnable {
                     prevChunkSetOfLogIds = thisChunkSetOfLogIds;
                     if (thisChunkSetOfLogIds.size() != sizeOfResultSet) {
                         logReq.log("ERROR: Number of Ids and size of result set from api do not match");
-                        logReq.log("opc request id "+ searchLogsResponse.getOpcRequestId());
+                        logReq.log("opc request id " + searchLogsResponse.getOpcRequestId());
                         logReq.log("StartTimeStamp is " + startDateApi.getTime() + " EndTimeStamp is " + endDateApi);
                         logReq.doesJobNeedsToBeAborted = true;
                         break;
@@ -187,13 +187,13 @@ class LogExporter implements Runnable {
                 logReq.doesJobNeedsToBeAborted = true;
                 break;
             }
-            if(thisChunkSetOfLogIds.contains(logEntryId)){
-                logReq.log("Duplicate log record entry for id found in the single call of search API results : "+logEntryId);
+            if (thisChunkSetOfLogIds.contains(logEntryId)) {
+                logReq.log("Duplicate log record entry for id found in the single call of search API results : " + logEntryId);
 //                logReq.log(objToJson(resultSet));
 //                logReq.doesJobNeedsToBeAborted = true;
 //                break;
 
-            }else{
+            } else {
                 dedupedResulSet.add(searchLogEntry);
             }
             thisChunkSetOfLogIds.add(logEntryId);

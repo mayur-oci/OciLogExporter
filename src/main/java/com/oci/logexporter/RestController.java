@@ -78,9 +78,9 @@ public class RestController {
             Future<?> future = executorService.submit(logExporter);
             logExportReq.future = future;
             map.put(logExportReq.jobId, logExportReq);
-            return logExportReq.toString() + "\n\n Please take note of jobId:" +
+            return logExportReq.toString() + "\nPlease take note of jobId:" +
                     logExportReq.jobId + " to track job and see its log with HTTP GET request on <hostname>:8080/export/jobstatus?jobId=" + logExportReq.jobId +
-                    " Log file will also be uploaded to same bucket at the end of the job";
+                    " Log/status file will also be uploaded to same bucket at the end of the job";
         } else {
             return "\n\n Same job already exists. Please kill it first with HTTP GET request on <hostname>:8080/export/killjob?jobId=" + logExportReq.hashCode();
         }

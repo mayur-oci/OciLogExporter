@@ -247,15 +247,15 @@ public class LogExportReq {
                 return ("ERROR: Input parameter ociLogSearchQuery cant be null and must end with -  \"| sort by datetime asc\"");
             }
 
-            if(StringUtils.isEmpty(destinationBucketName)){
+            if (StringUtils.isEmpty(destinationBucketName)) {
                 return "Bucket name cant be empty";
             }
 
-            if(StringUtils.isEmpty(ociObjectStorageNamespace)){
+            if (StringUtils.isEmpty(ociObjectStorageNamespace)) {
                 return "Object Storage namespace cant be empty";
             }
 
-            if(timeWindowIncrementInSeconds > 180){
+            if (timeWindowIncrementInSeconds > 180) {
                 return "Keep timeWindowIncrementInSeconds no more than 180 seconds";
             }
 
@@ -275,6 +275,10 @@ public class LogExportReq {
             endpointForLogSearchOci = "https://logging." + ociRegion.getRegionId() + ".oci.oraclecloud.com";
 
             setOciAuthProvider();
+            if (this.ociAuthProvider == null){
+                return "ERROR: Failed to initialize instance principle based OCI Authentication Provider. " +
+                        "LogExporter needs to run on OCI instance or please provide oci cli config file in the request";
+            }
             setOciClients();
 
             if (endDateInMillisSinceEpoch < startDateInMillisSinceEpoch) {
@@ -313,16 +317,28 @@ public class LogExportReq {
     }
 
     private void setOciAuthProvider() throws IOException {
-        if (StringUtils.isNotEmpty(this.ociConfigFilePath)) {
-            File file = new File(this.ociConfigFilePath);
-            file.setReadOnly();
-            final ConfigFileReader.ConfigFile configFile;
-            configFile = ConfigFileReader.parse(file.getAbsolutePath(), StringUtils.isEmpty(this.ociProfileName) ? "DEFAULT" : this.ociProfileName);
-            this.ociAuthProvider = (BasicAuthenticationDetailsProvider)
-                    new ConfigFileAuthenticationDetailsProvider(configFile);
-        } else {
-            this.ociAuthProvider = (BasicAuthenticationDetailsProvider) InstancePrincipalsAuthenticationDetailsProvider.builder().build();
+        try {
+            if (StringUtils.isNotEmpty(this.ociConfigFilePath)) {
+                File file = new File(this.ociConfigFilePath);
+                file.setReadOnly();
+                final ConfigFileReader.ConfigFile configFile;
+                configFile = ConfigFileReader.parse(file.getAbsolutePath(), StringUtils.isEmpty(this.ociProfileName) ? "DEFAULT" : this.ociProfileName);
+                this.ociAuthProvider = (BasicAuthenticationDetailsProvider)
+                        new ConfigFileAuthenticationDetailsProvider(configFile);
+            }
+        } catch (IOException e) {
+            log("Failed to load oci config file for creating OCI Authentication Provider, " +
+                    "will try instance principle");
         }
+        if (this.ociAuthProvider == null){
+            try {
+                this.ociAuthProvider = (BasicAuthenticationDetailsProvider) InstancePrincipalsAuthenticationDetailsProvider.builder().build();
+                log("Successful in initializing instance principle based OCI Authentication Provider");
+            } catch (Exception e) {
+                log("Failed to initialize instance principle based OCI Authentication Provider");
+            }
+        }
+
     }
 
     private LogSearchClient getLogSearchClient() {
