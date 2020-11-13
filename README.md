@@ -11,7 +11,7 @@
 ## APIs
    We will explain apis with examples. 
 ### API to submit job for log export
-#### Request Curl   
+#### Request    
 ```
 curl --location --request POST '<HostIP>/export/' \
 --header 'Content-Type: application/json' \
@@ -52,7 +52,7 @@ Hence, JobId is unique to each search query and other factors used for hashing p
 
 ### API to track already submitted job
 
-#### Request Curl   
+#### Request    
 ```
 curl --location --request GET '<HostIP>/export/jobstatus?jobId=<JobId_Unsigned_Integer>'
 ```
@@ -65,7 +65,7 @@ Response is the entire log file for this job till the moment of the call. Each t
 
 ### API to kill the already submitted job
 
-#### Request Curl   
+#### Request    
 ```
 curl --location --request GET '<HostIP>/export/killjob?jobId=<JobId_Unsigned_Integer>'
 ```
