@@ -83,7 +83,7 @@ _Feel free to import these curls into postman, for exploring them with GUI._
 ## Application Deployment
    
 You can run the application either on your dev box or on OCI compute-instance.
-You will need Java-11 SDK installed on the host. Maven is prepackaged with Spring-boot, and you can use [mvnw utility which is part of this repo ](mvnw) for compiling and running application with simple command as follows
+You will need Java-11 SDK installed on the host. Maven is prepackaged with Spring-boot, and you can use [mvnw utility which is part of this repo ](mvnw) for compiling and running application with simple command as follows,
 ```
 ./mvnw spring-boot:run
 ```
@@ -107,5 +107,5 @@ For this authentication, you have 2 options.
 * After creation of compute-instance, you will have bash prompt open on the same compute-instance.
  You can then run the next [SetupOciInstanceForLogExporter.sh](AutomationScripts/SetupOciInstanceForLogExporter.sh) bash script. This will setup the application on the compute-instance, listening on port 80.
  
- _Needless to say, usage of these scripts is optional._   
+_Needless to say, usage of these scripts is optional._   
    
