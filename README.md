@@ -101,10 +101,11 @@ For this authentication, you have 2 options.
   2. Create compute-instance which is part of this dynamic group and deploy the code on the same.
 * Make sure you have OCI CLI config files and private key file are on the host/compute-instance. You also need to give their local paths as input parameters when you submit jobs using [job submit api](#API-to-submit-job-for-log-export).
 
-### Helpful *Automation Scripts* setting up the OciLogExporter on for OCI compute-instance
- The bash script [CreateOCIComputeInstance.sh](AutomationScripts/CreateOciComputeInstance.sh) uses OCI CLI to create OCI linux compute-instance and its required pre-requisite resource like VCN, subnets and internet gateway etc.
+### Helpful *[Automation Scripts](AutomationScripts)* setting up the OciLogExporter
+* The bash script [CreateOCIComputeInstance.sh](AutomationScripts/CreateOciComputeInstance.sh) uses OCI CLI to create OCI linux compute-instance and its required pre-requisite resource like VCN, subnets and internet gateway etc.
  It is fully configurable.
- After creation of compute-instance, you will have bash prompt open on the same compute-instance.
+* After creation of compute-instance, you will have bash prompt open on the same compute-instance.
  You can then run the next [SetupOciInstanceForLogExporter.sh](AutomationScripts/SetupOciInstanceForLogExporter.sh) bash script. This will setup the application on the compute-instance, listening on port 80.
- Usage of these scripts is completely optional.   
+ 
+ _Needless to say, usage of these scripts is optional._   
    
