@@ -2,9 +2,10 @@
 
 ## Introduction
    This is Spring-Boot based Java web app which helps you export your OCI logs from OCI Logging Service to Oracle Cloud Object Storage.
-   You submit jobs for exporting the logs using rest based api. Once you launch job with the rest api, it starts a single thread which does the job of exporting logs to object storage.
+   
+   You submit jobs for exporting the logs using rest based api. Once you launch job with this rest api, it starts a single thread which does the job of exporting logs to object storage.
    The thread fetches logs [OCI SearchLogs API](https://docs.cloud.oracle.com/en-us/iaas/api/#/en/logging-search/latest/SearchResult/SearchLogs), which is part OCI Java SDK. Similarly, for putting exported logs into object storage, it uses object storage apis from OCI java SDK.
-    
+   
    You can also track jobs, check their status and even kill jobs using other apis.
 ## FAQs
 ### Which OCI logs are exported?   
@@ -17,9 +18,8 @@
     Please read the api section for details.
     
 ## APIs
-   We will explain apis with examples
+   We will explain apis with examples. 
 ### API to submit job for log export
-
 #### Request Curl   
 ```
 curl --location --request POST '<HostIP>/export/' \
@@ -65,7 +65,7 @@ Hence, JobId is unique to each search query and other factors used for hashing p
 ```
 curl --location --request GET '<HostIP>/export/jobstatus?jobId=<JobId_Unsigned_Integer>'
 ```
-Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above api.
+Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above [job submit api](#API to submit job for log export).
 #### Response
 ```
 
@@ -78,26 +78,34 @@ Response is the entire log file for this job till the moment of the call. Each t
 ```
 curl --location --request GET '<HostIP>/export/killjob?jobId=<JobId_Unsigned_Integer>'
 ```
-Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above api.
+Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above [job submit api](#API to submit job for log export).
 The job is killed almost instantly after this api call. The logs exported so far to the object storage will not be deleted.
 The job cant be tracked after killing it.
 #### Response
 ```
 
 ```
-Response is the entire log file for this job till the moment of the call. Each time you call. Note this is the log file of this job run, and it is not to be confused with the logs being exported, as result of this job.   
+Response is the entire log file for this job till the moment of the call. Each time you call. Note this is the log file of this job run, and it is not to be confused with the logs being exported, as result of this job.
 
+   
+_Feel free to import these curls into postman, for exploring them with GUI._
 ## Application Deployment
    
-   You can run the application either on your dev box or on OCI compute-instance.
-   OCI compute-instance is recommended since to be in same region
-   For authenticating the code to use OCI api for reading logs and writing to bucket, you have 2 options.
-   1. In case you are using OCI compute-instance for running this application, 
-      1. Create dynamic group and associated IAM policy.
-      2. Create compute-instance which is part of this dynamic group.
-   2. Select **OCI region** from where you want your logs to be fetched and shown in the panel
-   
-## Automation scripts setting up the OciLogExporter on for OCI compute-instance
+You can run the application either on your dev box or on OCI compute-instance.
+OCI compute-instance is recommended to be in same region of your logs(you want to export) and destination object storage. This can help with reducing the end to end latency for the job run.
+We use OCI Java SDK apis for reading logs and writing to bucket. The application needs to OCI authentication for using these apis.
+For this authentication, you have 2 options.
+1. In case you are using OCI compute-instance for running this application, 
+  1. Create dynamic group named say *dg_for_log_exporter* and associated IAM policy. 
+     The policy needs to have following two statements.
+     ```
+     Allow dynamic-group dg_for_log_exporter to use log-content in tenancy 
+     Allow dynamic-group dg_for_log_exporter to manage objects in compartment <CompartmentName> where any {request.permission='OBJECT_CREATE', request.permission='OBJECT_READ', request.permission='OBJECT_INSPECT'}
+     ```
+  2. Create compute-instance which is part of this dynamic group and deploy the code on the same.
+2. Make sure you have OCI CLI config files and private key file are on the host/compute-instance. You also need to give their local paths as input parameters when you submit jobs using [job submit api](#API to submit job for log export).
+
+### Automation scripts setting up the OciLogExporter on for OCI compute-instance
 
    
    
