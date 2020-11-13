@@ -1,7 +1,7 @@
 # This script creates OCI linux compute instance and its required pre-requisite resource like VCN, subnets and internet gateway etc
 # Oci region for these resources is based on your current profile of oci cli config
 # Please setup following parameter as per your tenancy and credentials
-    export COMPARTMENT_NAME='testCmpt'
+    export COMPARTMENT_NAME='TestCmpt_0'
     export COMPUTE_NAME='ComputeForLogExporter'
     export COMPUTE_SHAPE='VM.Standard1.4'
     export OCI_HOME_REGION='us-ashburn-1'
@@ -43,7 +43,7 @@
 # Update security list for allowing traffic on port 8080
     SECURITY_LIST_ID=$(oci network vcn get --vcn-id ${VCN_ID} --query 'data."default-security-list-id"' --raw-output)
 
-    curl -O https://gist.githubusercontent.com/mayur-oci/ba3c76f50ca60445c9807effbf695706/raw/f78ddf3e696d5af1198971a9eea6a53c7ab1f833/ingress.json
+    curl -O https://gist.githubusercontent.com/mayur-oci/ba3c76f50ca60445c9807effbf695706/raw/86cb986ee9fd5afd134f81fd0481550212223071/ingress.json
     curl -O https://gist.githubusercontent.com/mayur-oci/2529ba1a3a3fed582631407435accff6/raw/ee07bc4984f0956972dd2379fc7d4491a527c29e/egress.json
 
     OCI_SECURITY_LIST_UPDATE=$(oci network security-list update --security-list-id ${SECURITY_LIST_ID} \
@@ -88,10 +88,11 @@
 
 # SSH into the node, set it up JDK 11, configure firewall and run the exporter
     export GIT_SETUP_EXPORTER="https://raw.githubusercontent.com/mayur-oci/OciLogExporter/master/AutomationScripts/SetupOciInstanceForLogExporter.sh"
-    ssh -i $SSH_PRIVATE_KEY_LOCATION  -o ServerAliveInterval=60 -o "StrictHostKeyChecking no" opc@$COMPUTE_IP \
+    ssh -i $SSH_PRIVATE_KEY_LOCATION opc@$COMPUTE_IP -o ServerAliveInterval=60 -o "StrictHostKeyChecking no" \
            "curl -O $GIT_SETUP_EXPORTER; chmod 777 SetupOciInstanceForLogExporter.sh"
-    ssh -i $SSH_PRIVATE_KEY_LOCATION -o ServerAliveInterval=60 -o "StrictHostKeyChecking no" opc@$COMPUTE_IP
     echo;echo;echo "Run the Script for setup after with root privileges aka 'sudo ./SetupOciInstanceForLogExporter.sh' on the instance"
+
+    ssh -i $SSH_PRIVATE_KEY_LOCATION opc@$COMPUTE_IP -o ServerAliveInterval=60 -o "StrictHostKeyChecking no"
 
 
 
