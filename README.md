@@ -92,10 +92,15 @@ _Feel free to import these curls into postman, for exploring them with GUI._
 ## Application Deployment
    
 You can run the application either on your dev box or on OCI compute-instance.
+You will need Java-11 SDK installed on the host. Maven is prepackaged with Spring-boot, and you can use [mvnw utility which is part of this repo ](mvnw) for compiling and running application with simple command as follows
+```
+./mvnw spring-boot:run
+```
 OCI compute-instance is recommended to be in same region of your logs(you want to export) and destination object storage. This can help with reducing the end to end latency for the job run.
 We use OCI Java SDK apis for reading logs and writing to bucket. The application needs to OCI authentication for using these apis.
+
 For this authentication, you have 2 options.
-1. In case you are using OCI compute-instance for running this application, 
+* In case you are using OCI compute-instance for running this application, 
   1. Create dynamic group named say *dg_for_log_exporter* and associated IAM policy. 
      The policy needs to have following two statements.
      ```
@@ -103,9 +108,12 @@ For this authentication, you have 2 options.
      Allow dynamic-group dg_for_log_exporter to manage objects in compartment <CompartmentName> where any {request.permission='OBJECT_CREATE', request.permission='OBJECT_READ', request.permission='OBJECT_INSPECT'}
      ```
   2. Create compute-instance which is part of this dynamic group and deploy the code on the same.
-2. Make sure you have OCI CLI config files and private key file are on the host/compute-instance. You also need to give their local paths as input parameters when you submit jobs using [job submit api](#API-to-submit-job-for-log-export).
+* Make sure you have OCI CLI config files and private key file are on the host/compute-instance. You also need to give their local paths as input parameters when you submit jobs using [job submit api](#API-to-submit-job-for-log-export).
 
-### Automation scripts setting up the OciLogExporter on for OCI compute-instance
-
-   
+### Helpful *Automation Scripts* setting up the OciLogExporter on for OCI compute-instance
+ The bash script [CreateOCIComputeInstance.sh](AutomationScripts/CreateOciComputeInstance.sh) uses OCI CLI to create OCI linux compute-instance and its required pre-requisite resource like VCN, subnets and internet gateway etc.
+ It is fully configurable.
+ After creation of compute-instance, you will have bash prompt open on the same compute-instance.
+ You can then run the next [SetupOciInstanceForLogExporter.sh](AutomationScripts/SetupOciInstanceForLogExporter.sh) bash script. This will setup the application on the compute-instance, listening on port 80.
+ Usage of these scripts is completely optional.   
    
