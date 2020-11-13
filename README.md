@@ -7,16 +7,7 @@
    The thread fetches logs [OCI SearchLogs API](https://docs.cloud.oracle.com/en-us/iaas/api/#/en/logging-search/latest/SearchResult/SearchLogs), which is part OCI Java SDK. Similarly, for putting exported logs into object storage, it uses object storage apis from OCI java SDK.
    
    You can also track jobs, check their status and even kill jobs using other apis.
-## FAQs
-### Which OCI logs are exported?   
-    This depends on your search query submitted as a part of the job.
-    Please read the api section for details.
 
-### How region for logs and object storage are configured? Do they need to be same?
-    This depends on your region submitted as a part of the job request. 
-    Yes they need to be same.
-    Please read the api section for details.
-    
 ## APIs
    We will explain apis with examples. 
 ### API to submit job for log export
