@@ -65,7 +65,7 @@ Hence, JobId is unique to each search query and other factors used for hashing p
 ```
 curl --location --request GET '<HostIP>/export/jobstatus?jobId=<JobId_Unsigned_Integer>'
 ```
-Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above [job submit api](#API to submit job for log export).
+Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above [job submit api](#API-to-submit-job-for-log-export).
 #### Response
 ```
 
@@ -78,7 +78,7 @@ Response is the entire log file for this job till the moment of the call. Each t
 ```
 curl --location --request GET '<HostIP>/export/killjob?jobId=<JobId_Unsigned_Integer>'
 ```
-Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above [job submit api](#API to submit job for log export).
+Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above [job submit api](#API-to-submit-job-for-log-export).
 The job is killed almost instantly after this api call. The logs exported so far to the object storage will not be deleted.
 The job cant be tracked after killing it.
 #### Response
@@ -103,7 +103,7 @@ For this authentication, you have 2 options.
      Allow dynamic-group dg_for_log_exporter to manage objects in compartment <CompartmentName> where any {request.permission='OBJECT_CREATE', request.permission='OBJECT_READ', request.permission='OBJECT_INSPECT'}
      ```
   2. Create compute-instance which is part of this dynamic group and deploy the code on the same.
-2. Make sure you have OCI CLI config files and private key file are on the host/compute-instance. You also need to give their local paths as input parameters when you submit jobs using [job submit api](#API to submit job for log export).
+2. Make sure you have OCI CLI config files and private key file are on the host/compute-instance. You also need to give their local paths as input parameters when you submit jobs using [job submit api](#API-to-submit-job-for-log-export).
 
 ### Automation scripts setting up the OciLogExporter on for OCI compute-instance
 
