@@ -98,11 +98,12 @@ For this authentication, you have 2 options.
      Allow dynamic-group dg_for_log_exporter to use log-content in tenancy 
      Allow dynamic-group dg_for_log_exporter to manage objects in compartment <CompartmentName> where any {request.permission='OBJECT_CREATE', request.permission='OBJECT_READ', request.permission='OBJECT_INSPECT'}
      ```
+     The policy needs to be in root compartment since it asks for privileges to read logs at tenancy level.
   2. Create compute-instance which is part of this dynamic group and deploy the code on the same.
 * Make sure you have OCI CLI config files and private key file are on the host/compute-instance. You also need to give their local paths as input parameters when you submit jobs using [job submit api](#API-to-submit-job-for-log-export).
 
 ### Helpful *[Automation Scripts](AutomationScripts)* setting up the OciLogExporter
-* The bash script [CreateOCIComputeInstance.sh](AutomationScripts/CreateOciComputeInstance.sh) uses OCI CLI to create OCI linux compute-instance and its required pre-requisite resource like VCN, subnets and internet gateway etc.
+* The bash script [CreateOCIComputeInstance.sh](AutomationScripts/CreateOciComputeInstance.sh) uses OCI CLI to create OCI linux compute-instance and its required pre-requisite resources like VCN, subnets and internet gateway etc.
  It is fully configurable.
 * After creation of compute-instance, you will have bash prompt open on the same compute-instance.
  You can then run the next [SetupOciInstanceForLogExporter.sh](AutomationScripts/SetupOciInstanceForLogExporter.sh) bash script. This will setup the application on the compute-instance, listening on port 80.

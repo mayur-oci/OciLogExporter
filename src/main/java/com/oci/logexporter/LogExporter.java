@@ -249,7 +249,7 @@ class LogExporter implements Runnable {
                     logReq.ociOsClient.deleteObject(deleteObjectRequest);
                     continue;
                 } else {
-                    logReq.log("Log file " + logFileObj.getName() + " uploaded successfully to oci object storage bucket " + logReq.getDestinationBucketName());
+                    logReq.log("Log file " + logFileObj.getName() + " uploaded successfully to oci object storage bucket " + logReq.getDestinationBucketName() + "\n");
                     logFileObj.delete();
                     break;
                 }

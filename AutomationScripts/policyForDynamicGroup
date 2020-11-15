@@ -1,0 +1,4 @@
+Allow dynamic-group dg_for_log_exporter  to read all-resources in tenancy
+Allow dynamic-group dg_for_log_exporter  to manage subnets in tenancy
+Allow dynamic-group dg_for_log_exporter  to manage virtual-network-family in tenancy
+Allow dynamic-group dg_for_log_exporter to manage object-family in tenancy
