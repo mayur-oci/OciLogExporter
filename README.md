@@ -1,13 +1,17 @@
 # OciLogExporter
-
+  
 ## Introduction
-   This is Spring-Boot based Java web app which helps you export your OCI logs from OCI Logging Service to Oracle Cloud Object Storage.
+   
+   This is Spring-Boot based Java web app which helps you export *your historic* OCI logs from OCI Logging Service to Oracle Cloud Object Storage.
+   Going forward, for exporting *your ongoing current logs* please use [Oracle Cloud Service Connector Hub](https://docs.cloud.oracle.com/en-us/iaas/Content/service-connector-hub/overview.htm).
    
    You submit jobs for exporting the logs using rest based api. Once you launch job with this rest api, it starts a single thread which does the job of exporting logs to object storage.
    The thread fetches logs [OCI SearchLogs API](https://docs.cloud.oracle.com/en-us/iaas/api/#/en/logging-search/latest/SearchResult/SearchLogs), which is part OCI Java SDK. Similarly, for putting exported logs into object storage, it uses object storage apis from OCI java SDK.
    
    You can also track jobs, check their status and even kill jobs using other apis.
-
+   
+   **OCI stands for [Oracle Cloud Infrastructure](https://www.oracle.com/cloud/)*
+   
 ## APIs
    We will explain apis with examples. 
 ### API to submit job for log export
