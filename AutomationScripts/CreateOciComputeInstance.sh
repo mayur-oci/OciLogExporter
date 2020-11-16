@@ -43,14 +43,14 @@
 # Update security list for allowing traffic on port 8080
     SECURITY_LIST_ID=$(oci network vcn get --vcn-id ${VCN_ID} --query 'data."default-security-list-id"' --raw-output)
 
-    curl -O https://gist.githubusercontent.com/mayur-oci/ba3c76f50ca60445c9807effbf695706/raw/86cb986ee9fd5afd134f81fd0481550212223071/ingress.json
-    curl -O https://gist.githubusercontent.com/mayur-oci/2529ba1a3a3fed582631407435accff6/raw/ee07bc4984f0956972dd2379fc7d4491a527c29e/egress.json
+    curl -O https://raw.githubusercontent.com/mayur-oci/OciLogExporter/master/AutomationScripts/ingress.json
+    curl -O https://raw.githubusercontent.com/mayur-oci/OciLogExporter/master/AutomationScripts/egress.json
 
     OCI_SECURITY_LIST_UPDATE=$(oci network security-list update --security-list-id ${SECURITY_LIST_ID} \
                             --ingress-security-rules file://`pwd`/ingress.json  \
                             --egress-security-rules file://`pwd`/egress.json --force)
-    rm -rf ingress.json
-    rm -rf egress.json
+    rm ingress.json
+    rm egress.json
 
 # Create the Compute Instance
     export COMPUTE_OCID=$(oci compute instance launch \
@@ -80,11 +80,11 @@
     DG_NAME='dg_for_log_exporter'_$(date "+DATE_%Y_%m_%d_TIME_%H_%M_%S")
     DG_ID=$(oci --region $OCI_HOME_REGION iam dynamic-group create --description 'dg_for_log_exporter' --name 'dg_for_log_exporter' --matching-rule "$MATCHING_RULE_FOR_DG" --wait-for-state ACTIVE --query "data.id" --raw-output)
 
-    DG_POLICY="[\"Allow dynamic-group dg_for_log_exporter to use log-content in tenancy \", \"Allow dynamic-group dg_for_log_exporter to manage objects in compartment $COMPARTMENT_NAME where any {request.permission='OBJECT_CREATE', request.permission='OBJECT_READ', request.permission='OBJECT_INSPECT'} \"]"
-    echo $DG_POLICY > statements.json
-    DG_POLICY_ID=$(oci iam policy create -c $OCI_TENANCY_OCID --name "DG_POLICY_$COMPARTMENT_NAME" --description "A policy for instance" --statements file://`pwd`/statements.json --region ${OCI_HOME_REGION} --raw-output --query "data.id" --wait-for-state ACTIVE)
+    curl -O https://raw.githubusercontent.com/mayur-oci/OciLogExporter/master/AutomationScripts/policyForDynamicGroup
+    sed -i '' "s/dg_for_log_exporter/${DG_NAME}/g" policyForDynamicGroup
+    DG_POLICY_ID=$(oci iam policy create -c $OCI_TENANCY_OCID --name "DG_POLICY_FOR_$DG_NAME" --description "A policy for instance" --statements file://`pwd`/policyForDynamicGroup --region ${OCI_HOME_REGION} --raw-output --query "data.id" --wait-for-state ACTIVE)
     echo Created policy ${DG_POLICY_ID}.  Use the command: \'oci iam policy get --policy-id "${DG_POLICY_ID}"\' if you want to view the policy.
-    rm -rf statements.json
+    rm policyForDynamicGroup
 
 # SSH into the node, set it up JDK 11, configure firewall and run the exporter
     export GIT_SETUP_EXPORTER="https://raw.githubusercontent.com/mayur-oci/OciLogExporter/master/AutomationScripts/SetupOciInstanceForLogExporter.sh"

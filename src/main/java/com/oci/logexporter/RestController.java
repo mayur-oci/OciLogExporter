@@ -78,7 +78,7 @@ public class RestController {
             Future<?> future = executorService.submit(logExporter);
             logExportReq.future = future;
             map.put(logExportReq.jobId, logExportReq);
-            return logExportReq.toString() + "\nPlease take note of jobId:" +
+            return logExportReq.toString() + "Please take note of jobId:" +
                     logExportReq.jobId + " to track job and see its log with HTTP GET request on <hostname>:8080/export/jobstatus?jobId=" + logExportReq.jobId +
                     " Log/status file will also be uploaded to same bucket at the end of the job";
         } else {
