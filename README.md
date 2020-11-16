@@ -49,8 +49,6 @@ All parameters are part of JSON Body to this REST POST call
    * ociConfigFilePath, ociProfileName - needed if you are running code locally, not otherwise.
    
 #### Response 
-You get a JobId after job submission. JobId is generated after hashing key input parameter namely region, ociLogSearchQuery, startDateInMillisSinceEpoch, endDateInMillisSinceEpoch,ociObjectStorageNamespace, destinationBucketName  & timeWindowIncrementInSeconds.
-Hence, JobId is unique to each search query and other factors used for hashing process.
 ```
 Your request info :  
                   
@@ -79,6 +77,9 @@ Your request info :
 
    Please take note of jobId:916912835 to track job and see its log with HTTP GET request on <hostname>/export/jobstatus?jobId=916912835 Log/status file will also be uploaded to same bucket at the end of the job
 ```   
+You get a JobId after job submission. JobId is generated after hashing key input parameter namely region, ociLogSearchQuery, startDateInMillisSinceEpoch, endDateInMillisSinceEpoch,ociObjectStorageNamespace, destinationBucketName  & timeWindowIncrementInSeconds.
+Hence, JobId is unique to each search query and other factors used for hashing process.
+
 Object Storage prefix shows the bucket hierarchy that will be created where exported logs will be put.
 ### API to track already submitted job
 
