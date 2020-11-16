@@ -74,7 +74,7 @@ Your request info :
 
    Please take note of jobId:916912835 to track job and see its log with HTTP GET request on <hostname>/export/jobstatus?jobId=916912835 Log/status file will also be uploaded to same bucket at the end of the job
 ```   
-
+Object Storage prefix shows the bucket hierarchy that will be created where exported logs will be put.
 ### API to track already submitted job
 
 #### Request    
@@ -143,9 +143,14 @@ _Feel free to import these curls into postman, for exploring them with GUI._
 ## Application Deployment
    
 You can run the application either on your dev box or on OCI compute-instance.
-You will need Java-11 SDK installed on the host. Maven is prepackaged with Spring-boot, and you can use [mvnw utility which is part of this repo ](mvnw) for compiling and running application with simple command as follows,
+You will need Java-11 SDK installed on the host. Tomcat & Maven is prepackaged with Spring-boot. You can use [mvnw utility which is part of this repo ](mvnw) for compiling and running application with simple command as follows,
 ```
 ./mvnw spring-boot:run
+```
+For running the same command in background
+```
+nohup ./mvnw spring-boot:run > ociexporter.app.log&
+tail -f ociexporter.app.log
 ```
 OCI compute-instance is recommended to be in same region of your logs(you want to export) and destination object storage. This can help with reducing the end to end latency for the job run.
 We use OCI Java SDK apis for reading logs and writing to bucket. The application needs to OCI authentication for using these apis.

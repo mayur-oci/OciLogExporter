@@ -261,7 +261,7 @@ public class LogExportReq {
 
             this.jobId = this.hashCode();
             this.startOfJobTS = new Date();
-            this.objectStoragePrefixForUploadedFilesForThisRequest = "JobId->" + this.jobId + "_" + "Time Of JobRun->" + this.startOfJobTS.toString() + " _";
+            this.objectStoragePrefixForUploadedFilesForThisRequest = "JobId->" + this.jobId + "_" + "Time Of JobRun->" + this.startOfJobTS.toString() + "_";
             File file = new File(System.getProperty("user.home"));
             this.requestLogDirectory = new File(file, "logDir_" + this.objectStoragePrefixForUploadedFilesForThisRequest);
             if (requestLogDirectory.exists()) {
