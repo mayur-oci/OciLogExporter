@@ -7,6 +7,7 @@
    
    You submit jobs for exporting the logs using rest based api. Once you launch job with this rest api, it starts a single thread which does the job of exporting logs to object storage.
    The thread fetches logs [OCI SearchLogs API](https://docs.cloud.oracle.com/en-us/iaas/api/#/en/logging-search/latest/SearchResult/SearchLogs), which is part OCI Java SDK. Similarly, for putting exported logs into object storage, it uses object storage apis from OCI java SDK.
+   You can concurrently run up to 5 jobs.
    
    You can also track jobs, check their status and even kill jobs using other apis.
    
