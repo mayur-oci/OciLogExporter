@@ -84,7 +84,42 @@ curl --location --request GET '<HostIP>/export/jobstatus?jobId=<JobId_Unsigned_I
 Query parameter JobId_Unsigned_Integer is the same job id you get when you submitted the job with the above [job submit api](#API-to-submit-job-for-log-export).
 #### Response
 ```
+Successful in initializing instance principle based OCI Authentication Provider
+Started Job
+Your request info :  
+                 
+                 jobId=916912835 ,Generated after hashing (region, ociLogSearchQuery, startDateInMillisSinceEpoch, endDateInMillisSinceEpoch,
+                   ociObjectStorageNamespace, destinationBucketName, timeWindowIncrementInSeconds) hence unique to each search query
+                 region='US_PHOENIX_1'
+                 ociLogSearchQuery='search "ocid1.tenancy.oc1..aaaaaaaaopbu45aomik7sswe4nzzll3f6ii6pipd5ttw4ayoozez37qqmh3a"  | sort by datetime asc'
+                 startDateInMillisSinceEpoch=1603153210000
+                 endDateInMillisSinceEpoch=1604007851770
+                 startDate in date format=Tue Oct 20 00:20:10 GMT 2020
+                 endDate in date format=Thu Oct 29 21:44:11 GMT 2020
+                 timeWindowIncrementInSeconds=180
+                 uploadLogFileSize=3000
+                 logFetchApiLimit=999
+                 ociObjectStorageNamespace='intrandallbarnes'
+                 destinationBucketName='LogExport_'
+                 ociConfigFilePath='null'
+                 ociProfileName='null'
+                 ociRegion=US_PHOENIX_1
+                 endpointForLogSearchOci='https://logging.us-phoenix-1.oci.oraclecloud.com'
+                 local requestOutputFile=/root/logDir_JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _/JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _requestOutput.out
+                 local requestLogDirectory=/root/logDir_JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _
+                 Object Storage prefix for uploaded files for this request=JobId->916912835/Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 /
 
+
+
+ 
+Number of records to be uploaded 3007 with file JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _ Log records with timestamps from Tue Oct 20 00:20:10 GMT 2020 to Tue Oct 20 05:05:51 GMT 2020.log
+Log file JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _ Log records with timestamps from Tue Oct 20 00:20:10 GMT 2020 to Tue Oct 20 05:05:51 GMT 2020.log uploaded successfully to oci object storage bucket LogExport_
+
+Number of records to be uploaded 3006 with file JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _ Log records with timestamps from Tue Oct 20 05:05:51 GMT 2020 to Tue Oct 20 12:47:42 GMT 2020.log
+Log file JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _ Log records with timestamps from Tue Oct 20 05:05:51 GMT 2020 to Tue Oct 20 12:47:42 GMT 2020.log uploaded successfully to oci object storage bucket LogExport_
+
+Number of records to be uploaded 3006 with file JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _ Log records with timestamps from Tue Oct 20 12:47:42 GMT 2020 to Tue Oct 20 20:20:21 GMT 2020.log
+Log file JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _ Log records with timestamps from Tue Oct 20 12:47:42 GMT 2020 to Tue Oct 20 20:20:21 GMT 2020.log uploaded successfully to oci object storage bucket LogExport_
 ```
 Response is the entire log file for this job till the moment of the call. Each time you call. Note this is the log file of this job run, and it is not to be confused with the logs being exported, as result of this job.   
 
@@ -99,7 +134,7 @@ The job is killed almost instantly after this api call. The logs exported so far
 The job cant be tracked after killing it.
 #### Response
 ```
-
+<html><head><title>916912835</title></head><body>Job with jobId: 916912835 aborted!!!<br></body></html>
 ```
 Response is the entire log file for this job till the moment of the call. Each time you call. Note this is the log file of this job run, and it is not to be confused with the logs being exported, as result of this job.
 
