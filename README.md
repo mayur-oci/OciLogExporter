@@ -47,7 +47,32 @@ All parameters are part of JSON Body to this REST POST call
 You get a JobId after job submission. JobId is generated after hashing key input parameter namely region, ociLogSearchQuery, startDateInMillisSinceEpoch, endDateInMillisSinceEpoch,ociObjectStorageNamespace, destinationBucketName  & timeWindowIncrementInSeconds.
 Hence, JobId is unique to each search query and other factors used for hashing process.
 ```
-{}
+Your request info :  
+                  
+                  jobId=916912835 ,Generated after hashing (region, ociLogSearchQuery, startDateInMillisSinceEpoch, endDateInMillisSinceEpoch,
+                    ociObjectStorageNamespace, destinationBucketName, timeWindowIncrementInSeconds) hence unique to each search query
+                  region='US_PHOENIX_1'
+                  ociLogSearchQuery='search "ocid1.tenancy.oc1..aaaaaaaaopbu45aomik7sswe4nzzll3f6ii6pipd5ttw4ayoozez37qqmh3a"  | sort by datetime asc'
+                  startDateInMillisSinceEpoch=1603153210000
+                  endDateInMillisSinceEpoch=1604007851770
+                  startDate in date format=Tue Oct 20 00:20:10 GMT 2020
+                  endDate in date format=Thu Oct 29 21:44:11 GMT 2020
+                  timeWindowIncrementInSeconds=180
+                  uploadLogFileSize=3000
+                  logFetchApiLimit=999
+                  ociObjectStorageNamespace='intrandallbarnes'
+                  destinationBucketName='LogExport_'
+                  ociConfigFilePath='null'
+                  ociProfileName='null'
+                  ociRegion=US_PHOENIX_1
+                  endpointForLogSearchOci='https://logging.us-phoenix-1.oci.oraclecloud.com'
+                  local requestOutputFile=/root/logDir_JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _/JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _requestOutput.out
+                  local requestLogDirectory=/root/logDir_JobId->916912835_Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 _
+                  Object Storage prefix for uploaded files for this request=JobId->916912835/Time Of JobRun->Mon Nov 16 21:32:17 GMT 2020 /
+
+
+
+   Please take note of jobId:916912835 to track job and see its log with HTTP GET request on <hostname>/export/jobstatus?jobId=916912835 Log/status file will also be uploaded to same bucket at the end of the job
 ```   
 
 ### API to track already submitted job

@@ -67,7 +67,7 @@ public class RestController {
             throws Exception {
         if (map.size() > 5) {
             return " Do not submit more than 5 log export jobs...either wait for any existing job to finish " +
-                    "Or kill any job with HTTP GET request on <hostname>:8080/export/killjob?jobId=<jobId>";
+                    "Or kill any job with HTTP GET request on <hostname>/export/killjob?jobId=<jobId>";
         }
         if (!map.containsKey(logExportReq.hashCode())) {
             String success = logExportReq.initialization();
@@ -79,10 +79,10 @@ public class RestController {
             logExportReq.future = future;
             map.put(logExportReq.jobId, logExportReq);
             return logExportReq.toString() + "Please take note of jobId:" +
-                    logExportReq.jobId + " to track job and see its log with HTTP GET request on <hostname>:8080/export/jobstatus?jobId=" + logExportReq.jobId +
+                    logExportReq.jobId + " to track job and see its log with HTTP GET request on <hostname>/export/jobstatus?jobId=" + logExportReq.jobId +
                     " Log/status file will also be uploaded to same bucket at the end of the job";
         } else {
-            return "\n\n Same job already exists. Please kill it first with HTTP GET request on <hostname>:8080/export/killjob?jobId=" + logExportReq.hashCode();
+            return "\n\n Same job already exists. Please kill it first with HTTP GET request on <hostname>/export/killjob?jobId=" + logExportReq.hashCode();
         }
     }
 

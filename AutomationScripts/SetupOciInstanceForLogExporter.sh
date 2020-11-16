@@ -26,7 +26,8 @@
     alternatives --set java $JAVA_11
     java --version
     javac -version
-
+# set default timezone-optional
+    timedatectl set-timezone America/Los_Angeles
 # Pull and run LogExporter.
 # Please note since LogExporter is Spring Boot application, the maven is prepackaged with its code repo
     git clone https://github.com/mayur-oci/OciLogExporter.git
